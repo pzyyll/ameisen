@@ -12,18 +12,35 @@
 
 namespace am {
 
-
-    class Session : boost::enable_shared_from_this<Session> {
+    class Session : public boost::enable_shared_from_this<Session> {
     public:
         enum {
             kMaxBufferLenth = 1024000,
         };
         explicit Session(boost::asio::io_service &io_service);
+        explicit Session(boost::asio::ip::tcp::socket socket);
         ~Session();
+
+        /**
+         * @todo start async_read
+         */
+        void Start();
+
+        /**
+         * @todo send msg
+         */
+        void AsyncSend(const std::string &data);
 
         boost::asio::ip::tcp::socket &Socket();
 
+        unsigned int SessionId() const;
+
     private:
+        /**
+         * @todo
+         */
+        void DoRead();
+
         static unsigned int GenSessionId();
 
     private:

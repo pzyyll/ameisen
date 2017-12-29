@@ -7,10 +7,18 @@
 namespace am {
 
     Session::Session(boost::asio::io_service &io_service)
-            : socket_(io_service),
-              session_id_(GenSessionId()),
-              read_buf_(kMaxBufferLenth),
-              write_buf_(kMaxBufferLenth) {
+        : socket_(io_service),
+          session_id_(GenSessionId()),
+          read_buf_(kMaxBufferLenth),
+          write_buf_(kMaxBufferLenth) {
+
+    }
+
+    Session::Session(boost::asio::ip::tcp::socket socket)
+        : socket_(std::move(socket)),
+          session_id_(GenSessionId()),
+          read_buf_(kMaxBufferLenth),
+          write_buf_(kMaxBufferLenth) {
 
     }
 
@@ -20,6 +28,10 @@ namespace am {
 
     boost::asio::ip::tcp::socket &Session::Socket() {
         return socket_;
+    }
+
+    unsigned int Session::SessionId() const {
+        return session_id_;
     }
 
     unsigned int Session::GenSessionId() {

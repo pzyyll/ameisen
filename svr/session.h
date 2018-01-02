@@ -19,27 +19,34 @@ namespace am {
         };
         explicit Session(boost::asio::io_service &io_service);
         explicit Session(boost::asio::ip::tcp::socket socket);
-        ~Session();
+        virtual ~Session();
 
         /**
-         * @todo start async_read
+         * 接收数据后实际执行的动作
+         * @param data
+         * @return 解析掉的数据, 包尚未接收完整返回 0, 包错误及其它出错情况返回 -1.
          */
+        virtual std::size_t Do(const char *data, std::size_t len);
+
         void Start();
 
         /**
-         * @todo send msg
+         * @todo stop
          */
-        void AsyncSend(const std::string &data);
+        void Stop();
+
+        void AsyncSend(const char *data, std::size_t len);
 
         boost::asio::ip::tcp::socket &Socket();
 
         unsigned int SessionId() const;
 
     private:
-        /**
-         * @todo
-         */
         void DoRead();
+
+        void HandlerRead(const boost::system::error_code &ec, std::size_t size);
+
+        void HandlerWrite(const boost::system::error_code &ec, std::size_t size);
 
         static unsigned int GenSessionId();
 
@@ -47,7 +54,6 @@ namespace am {
         boost::asio::ip::tcp::socket socket_;
         unsigned int session_id_;
 
-        // @todo add rw buffer
         Buffer read_buf_, write_buf_;
     };
 } //namespace am

@@ -52,6 +52,14 @@ namespace am {
             fpos = 0;
         }
 
+        std::size_t Append(const char *data, std::size_t len) {
+            if (len > RemainSize())
+                return static_cast<std::size_t>(-1);
+            memcpy(TailPos(), data, len);
+            TailAdvancing(len);
+            return len;
+        }
+
         unsigned long fpos, tpos;
         std::vector<char> storage;
     };

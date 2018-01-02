@@ -18,18 +18,26 @@
 #include "am_memory.h"
 #include "session.h"
 
+
 using namespace std;
 using namespace am;
 
-std::map<int, boost::shared_ptr<Session>> sess_map;
+class EchoSession : public Session {
+public:
+    explicit EchoSession(boost::asio::io_service &io_svr) : Session(io_svr) { }
+    explicit EchoSession(boost::asio::ip::tcp::socket sock) : Session(std::move(sock)) { }
 
-void WriteHanlderm(const boost::system::error_code &ec, std::size_t bytes, boost::shared_ptr<Session> sess_ptr) {
-    if (ec) {
-        cerr << ec.message() << endl;
-        sess_map.erase(sess_ptr->SessionId());
-        sess_ptr->Socket().close();
+    std::size_t Do(const char *data, std::size_t len) override {
+        string str(data, len);
+        cout << "recv: " << str << endl;
+        cout << this_thread::get_id() << endl;
+        AsyncSend(data, len);
+        return len;
     }
-}
+};
+
+
+std::map<int, boost::shared_ptr<Session>> sess_map;
 
 class Server {
 public:
@@ -41,35 +49,19 @@ public:
 
     void DoAccept() {
         acceptor_.async_accept(peer_socket_, peer_endpoint_, boost::bind(HandleAccept, this, _1));
-        //acceptor_.async_accept(peer_socket_, peer_endpoint_, [this](boost::system::error_code ec) {
-        //    if (!ec) {
-        //        cout << "accept_begin" << endl;
-        //        cout << peer_endpoint_.address().to_string() << ":" << peer_endpoint_.port() << endl;
-        //        cout << "accept_end" << endl;
-        //        for (auto &x: sockets) {
-        //            string str("hello.");
-        //            x.send(boost::asio::buffer(str.c_str(), str.size()));
-        //        }
-        //        sockets.emplace_back(std::move(peer_socket_));
-        //    }
-        //    cout << "===" << endl;
-        //    DoAccept();
-        //});
     }
 
     void HandleAccept(boost::system::error_code ec) {
         boost::mutex::scoped_lock lock(mutex_);
         if (!ec) {
             cout << "accept_begin" << endl;
-            boost::shared_ptr<Session> sess_ptr = MakeShared<Session>(std::move(peer_socket_));
+            boost::shared_ptr<Session> sess_ptr = MakeShared<EchoSession>(std::move(peer_socket_));
             sess_map[sess_ptr->SessionId()] = sess_ptr;
             cout << peer_endpoint_.address().to_string() << ":" << peer_endpoint_.port() << endl;
             cout << std::this_thread::get_id() << endl;
 
-            for (auto &x: sess_map) {
-                string str("hello\n");
-                x.second->Socket().async_send(boost::asio::buffer(str.c_str(), str.length()), boost::bind(WriteHanlderm, _1, _2, x.second));
-            }
+            sess_ptr->Start();
+
             cout << "accept_end" << endl;
         }
         cout << "===" << endl;

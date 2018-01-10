@@ -29,12 +29,21 @@ namespace am {
 
     }
 
-    std::size_t Session::Do(const char *data, std::size_t len) {
+    int Session::Do(const char *data, std::size_t len) {
 
+    }
+
+    void Session::Close() {
+        Stop();
     }
 
     void Session::Start() {
         DoRead();
+    }
+
+    void Session::Stop() {
+        socket_.close();
+        //socket_.shutdown(boost::asio::socket_base::shutdown_both);
     }
 
     boost::asio::ip::tcp::socket &Session::Socket() {
@@ -47,29 +56,31 @@ namespace am {
 
     void Session::DoRead() {
         socket_.async_read_some(boost::asio::buffer(read_buf_.TailPos(), read_buf_.RemainSize()),
-                                boost::bind(Session::HandlerRead, this, _1, _2));
+                                boost::bind(&Session::HandlerRead, shared_from_this(), _1, _2));
     }
 
     void Session::HandlerRead(const boost::system::error_code &ec, std::size_t size) {
-        if (ec == boost::asio::error::would_block) {
+        if (ec == boost::asio::error::would_block || ec == boost::asio::error::try_again) {
             //std::cerr << ec.message() << std::endl;
+            DoRead();
             return ;
         }
 
         if (ec) {
             std::cerr << ec.message() << std::endl;
-            //@todo stop the session when appropriate
+            Close();
             return;
         }
 
+        boost::mutex::scoped_lock lock(rmutex_);
         read_buf_.TailAdvancing(size);
-        std::size_t rsize = Do(read_buf_.FrontPos(), read_buf_.UsedSize());
-        if (rsize < 0) {
+        int rs = Do(read_buf_.FrontPos(), read_buf_.UsedSize());
+        if (rs < 0) {
             std::cerr << "Recv pkg info err." << std::endl;
-            //@todo stop the session when appropriat.
+            Close();
             return;
         }
-        read_buf_.FrontAdvancing(rsize);
+        read_buf_.FrontAdvancing(static_cast<unsigned>(rs));
         read_buf_.MemoryMove2Left();
         DoRead();
     }
@@ -82,9 +93,11 @@ namespace am {
 
     void Session::AsyncSend(const char *data, std::size_t len) {
         //socket_.async_write_some()
+        boost::mutex::scoped_lock lock(wmutex_);
         write_buf_.Append(data, len);
+        lock.unlock();
         boost::asio::async_write(socket_, boost::asio::buffer(write_buf_.FrontPos(), write_buf_.UsedSize()),
-                                 boost::bind(&Session::HandlerWrite, this, _1, _2));
+                                 boost::bind(&Session::HandlerWrite, shared_from_this(), _1, _2));
     }
 
     void Session::HandlerWrite(const boost::system::error_code &ec, std::size_t size) {
@@ -94,13 +107,12 @@ namespace am {
 
         if (ec) {
             std::cerr << ec.message() << std::endl;
-            //@todo stop this session when approciate
+            Close();
             return;
         }
 
+        boost::mutex::scoped_lock lock(wmutex_);
         write_buf_.FrontAdvancing(size);
         write_buf_.MemoryMove2Left();
     }
-
-
 } //namespace am

@@ -7,13 +7,20 @@
 
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/asio.hpp>
-
+#include <boost/thread.hpp>
 #include "buffer.h"
 
 namespace am {
 
+    class ProtocolInterface {
+    public:
+        virtual int Do(const char *data, std::size_t len) = 0;
+    };
+
     class Session : public boost::enable_shared_from_this<Session> {
     public:
+        typedef boost::shared_ptr<Session> Pointer;
+
         enum {
             kMaxBufferLenth = 1024000,
         };
@@ -26,13 +33,12 @@ namespace am {
          * @param data
          * @return 解析掉的数据, 包尚未接收完整返回 0, 包错误及其它出错情况返回 -1.
          */
-        virtual std::size_t Do(const char *data, std::size_t len);
+        virtual int Do(const char *data, std::size_t len);
+
+        virtual void Close();
 
         void Start();
 
-        /**
-         * @todo stop
-         */
         void Stop();
 
         void AsyncSend(const char *data, std::size_t len);
@@ -55,6 +61,7 @@ namespace am {
         unsigned int session_id_;
 
         Buffer read_buf_, write_buf_;
+        boost::mutex rmutex_, wmutex_;
     };
 } //namespace am
 

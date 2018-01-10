@@ -17,7 +17,7 @@
 
 #include "am_memory.h"
 #include "session.h"
-
+#include "session_mng.h"
 
 using namespace std;
 using namespace am;
@@ -27,17 +27,19 @@ public:
     explicit EchoSession(boost::asio::io_service &io_svr) : Session(io_svr) { }
     explicit EchoSession(boost::asio::ip::tcp::socket sock) : Session(std::move(sock)) { }
 
-    std::size_t Do(const char *data, std::size_t len) override {
+    int Do(const char *data, std::size_t len) override {
         string str(data, len);
         cout << "recv: " << str << endl;
         cout << this_thread::get_id() << endl;
         AsyncSend(data, len);
         return len;
     }
+
+    void Close() override {
+        Session::Close();
+        SessionMngSingleton::get_mutable_instance().DelSession(SessionId());
+    }
 };
-
-
-std::map<int, boost::shared_ptr<Session>> sess_map;
 
 class Server {
 public:
@@ -56,7 +58,8 @@ public:
         if (!ec) {
             cout << "accept_begin" << endl;
             boost::shared_ptr<Session> sess_ptr = MakeShared<EchoSession>(std::move(peer_socket_));
-            sess_map[sess_ptr->SessionId()] = sess_ptr;
+            SessionMngSingleton::get_mutable_instance().AddSession(sess_ptr);
+            cout << "connect num: " << SessionMngSingleton::get_mutable_instance().Size() << endl;
             cout << peer_endpoint_.address().to_string() << ":" << peer_endpoint_.port() << endl;
             cout << std::this_thread::get_id() << endl;
 

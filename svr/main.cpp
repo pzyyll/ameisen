@@ -32,7 +32,7 @@ public:
         cout << "recv: " << str << endl;
         cout << this_thread::get_id() << endl;
         AsyncSend(data, len);
-        return len;
+        return static_cast<int>(len);
     }
 
     void Close() override {
@@ -50,7 +50,7 @@ public:
     }
 
     void DoAccept() {
-        acceptor_.async_accept(peer_socket_, peer_endpoint_, boost::bind(HandleAccept, this, _1));
+        acceptor_.async_accept(peer_socket_, peer_endpoint_, boost::bind(&Server::HandleAccept, this, _1));
     }
 
     void HandleAccept(boost::system::error_code ec) {

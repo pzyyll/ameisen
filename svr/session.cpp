@@ -61,9 +61,8 @@ namespace am {
 
     void Session::HandlerRead(const boost::system::error_code &ec, std::size_t size) {
         if (ec == boost::asio::error::would_block || ec == boost::asio::error::try_again) {
-            //std::cerr << ec.message() << std::endl;
             DoRead();
-            return ;
+            return;
         }
 
         if (ec) {

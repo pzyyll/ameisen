@@ -1,0 +1,15 @@
+include_path = ./ ./common/ext/test/ /cygdrive/e/workspace/test/
+abs_paths = $(abspath $(include_path))
+abs_build = /home/
+src = $(foreach v,$(include_path),$(wildcard $(v)/*.cpp))
+src := $(abspath $(src))
+objs := $(addprefix $(abs_build),$(notdir $(src:%.cpp=%.o)))
+
+%.d : %.cpp
+	@echo "target: "$@
+	@echo "deps: "$<
+
+echo :
+	@echo "cpp: "$(src)
+	@echo "abs: "$(abs_paths)
+	@echo "objs: "$(objs)

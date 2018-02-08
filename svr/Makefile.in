@@ -1,0 +1,32 @@
+###########################################
+CC := g++
+CPPFLAGS := -std=c++11 -Wall -g3
+INCFLAGS = $(addprefix -I,$(INCLUDE_DIRS))
+TARGET = ameison
+
+###########################################
+INCLUDE_DIRS := . ./common/ext/test
+SRC_DIRS := . ./common/ext/test
+BUILD_DIR := ./build
+OBJS = $(SRCS:.cpp=.o)
+
+###########################################
+
+SRCS := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.cpp))
+
+%.d : %.cpp
+	set -e; rm -f $@; \
+	$(CC) -MM $< > $@.$$$$; \
+	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	echo -e "\t"$(CC) $(INCFLAGS) $(CPPFLAGS) -c $(<) -o $(@:.d=.o) >> $@; \
+	rm -f $@.$$$$
+
+sinclude $(SRCS:.cpp=.d)
+
+echo_test :
+	@echo $(SRCS)
+	@echo $(patsubst %.cpp,%.o,$(SRCS))
+
+.PHONY : clean
+clean:
+	rm -rf $(SRCS:.cpp=.d) $(OBJS)

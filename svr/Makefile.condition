@@ -1,0 +1,11 @@
+Srcs = $(wildcard *.cpp)
+Objects = $(Srcs:.cpp=.o)
+CC = g++
+
+echo_test : CC = gcc
+echo_test :
+ifeq ($(CC), g++)
+	@echo 'g++ : '$(Objects)
+else
+	@echo $(Objects)
+endif

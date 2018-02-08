@@ -92,8 +92,11 @@ int main() {
 
         Server svr(net_io, endpoint);
         for (int i = 0; i < 2; ++i) {
-            MakeShared<boost::thread>(boost::bind(&boost::asio::io_service::run, &net_io))->detach();
+            auto ptr_t =
+            MakeShared<boost::thread>(boost::bind(&boost::asio::io_service::run, &net_io));//->detach();
+            ptr_t->join();
         }
+
         net_io.run();
     } catch (exception &e) {
         cerr << e.what() << endl;

@@ -12,4 +12,5 @@ void AM_free(void *ptr);
 void *AM_realloc(void *ptr, size_t size);
 void *AM_calloc(size_t nmemb, size_t size);
 
+
 #endif //SVR_AM_MALLOC_H

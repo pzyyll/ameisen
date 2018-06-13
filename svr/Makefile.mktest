@@ -1,0 +1,7 @@
+
+SUFFIXS = .cpp .cc
+INCDIRS = . ./common/ext/test/
+SRCS = $(foreach v,$(INCDIRS),$(wildcard $(addprefix $(v)/*,$(SUFFIXS))))
+
+echo :
+	@echo "srcs : "$(SRCS)

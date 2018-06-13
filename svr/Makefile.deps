@@ -1,0 +1,21 @@
+
+SRC_DIR = . ./common/ext/test/
+SRC_DIR := $(abspath $(SRC_DIR))
+
+SRCS = $(foreach v,$(SRC_DIR),$(wildcard $(v)/*.cpp))
+
+CPPFLAGS = -std=c++11 -Wall -g -fPIC
+COMPILE.cc = g++ $(CPPFLAGS)
+
+deps:
+%.d : %.cpp
+	set -e; rm -rf $@; \
+	$(COMPILE.cc) -MT $*.o -MM $< -MF $@.$$$$; \
+	sed "s,\($*\).o[ :]*,\1.o $@ : ,g" < $@.$$$$ > $@; \
+	echo -e "\t"$(COMPILE.cc) -o $*.o -c $< >> $@; \
+	rm -rf $@.$$$$
+
+sinclude $(SRCS:.cpp=.d)
+
+clean:
+	rm -rf $(SRCS:.cpp=.d)

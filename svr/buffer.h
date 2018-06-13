@@ -11,7 +11,6 @@
 namespace am {
     struct Buffer {
         Buffer() : fpos(0), tpos(0) {
-
         }
 
         explicit Buffer(const unsigned long len)

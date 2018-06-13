@@ -30,7 +30,7 @@ namespace am {
     }
 
     int Session::Do(const char *data, std::size_t len) {
-
+        return 0;
     }
 
     void Session::Close() {

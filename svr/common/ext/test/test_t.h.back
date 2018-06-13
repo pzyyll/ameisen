@@ -1,0 +1,8 @@
+#ifndef TEST_T_H
+#define TEST_T_H
+
+inline int TestT() {
+    return 1;
+}
+
+#endif //TEST_T_H

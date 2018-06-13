@@ -79,8 +79,16 @@ private:
     boost::mutex mutex_;
 };
 
-int main() {
+int main(int argc, char *argv[]) {
     try {
+        if (argc < 2) {
+            cerr << "amsvr port." << endl;
+            return -1;
+        }
+
+        int port = atoi(argv[1]);
+        cout << "port : " << port << endl;
+
         struct sigaction sa;
         std::memset(&sa, 0, sizeof(sa));
         sa.sa_handler = SIG_IGN;
@@ -88,13 +96,14 @@ int main() {
 
         boost::asio::io_service net_io;
         boost::asio::io_service::work work(net_io);
-        boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), 3399);
+        boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), port);
 
         Server svr(net_io, endpoint);
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < 3; ++i) {
             auto ptr_t =
             MakeShared<boost::thread>(boost::bind(&boost::asio::io_service::run, &net_io));//->detach();
-            ptr_t->join();
+            //ptr_t->join();
+            ptr_t->detach();
         }
 
         net_io.run();
